@@ -24,11 +24,44 @@ async function run() {
     await client.connect();
     const database = client.db("TravelDB");
     const plansCollection = database.collection("plans");
+    const ordersCollection = database.collection("orders");
 
     // POST API
+    app.post("/orders", async (req, res) => {
+      const newPlan = req.body;
+      const result = await ordersCollection.insertOne(newPlan);
+      // console.log(newPlan);
+      res.json(result);
+    });
+
+    //  GET API WHICH WAS PLACED ORDERED BY USER
+    app.get("/orders", async (req, res) => {
+      const cursor = ordersCollection.find({});
+      const orders = await cursor.toArray();
+      // console.log(orders);
+      res.json(orders);
+    });
+
+    app.get("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const order = await ordersCollection.findOne(query);
+      res.json(order);
+    });
+
+    //  GET API WHICH WAS PLACED ORDER BY USER WITH THEIR EMAIL
+    app.get("/orders/:name", async (req, res) => {
+      const name = req.params.name;
+      const query = { name: name };
+      const order = await ordersCollection.find(query);
+      console.log(order);
+      res.json(order);
+    });
+
+    // POST API IN PLANS
     app.post("/plans", async (req, res) => {
-      const plan = req.body;
-      const result = await plansCollection.insertOne(plan);
+      const newPlan = req.body;
+      const result = await plansCollection.insertOne(newPlan);
       res.json(result);
     });
 
@@ -45,6 +78,33 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const plan = await plansCollection.findOne(query);
       res.json(plan);
+    });
+
+    // UPDATE PLAN
+    app.put("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedUser = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          name: updatedUser.name,
+          email: updatedUser.email,
+          address: updatedUser.address,
+          post: updatedUser.post,
+          status: updatedUser.status,
+        },
+      };
+      const result = await ordersCollection.updateOne(filter, updateDoc);
+      console.log("update user", id);
+      res.json(result);
+    });
+
+    // DELETE PLAN
+    app.delete("/devplan/:id", async (req, res) => {
+      const result = await ordersCollection.deleteOne({
+        _id: ObjectId(req.params.id),
+      });
+      res.send(result);
     });
   } finally {
     // await client.close();
